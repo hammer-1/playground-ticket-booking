@@ -151,18 +151,12 @@ Clients join the room `pitch:{pitchId}:{date}` and receive:
 │       ├── interfaces/       # HTTP controllers/routes + socket handlers
 │       └── main.ts           # composition root (wires everything)
 ├── frontend/                 # React + Vite + Tailwind v4
-│   ├── Dockerfile            # builds + serves via nginx
-│   ├── nginx.conf
-│   └── src/
-│       ├── lib/              # api client, socket, types
-│       ├── features/         # auth, booking (calendar, slots, reservation countdown)
-│       └── app/              # router + layout
-└── docs/
-    ├── 00-overview.md        # plan overview + architecture diagram
-    ├── ARCHITECTURE.md       # answers to the mandatory architecture questions
-    ├── schema.sql            # database schema
-    ├── research-notes.md     # findings that shaped the implementation
-    └── phases/               # phase-by-phase build plan
+    ├── Dockerfile            # builds + serves via nginx
+    ├── nginx.conf
+    └── src/
+        ├── lib/              # api client, socket, types
+        ├── features/         # auth, booking (calendar, slots, reservation countdown)
+        └── app/              # router + layout
 ```
 
 ---
