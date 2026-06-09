@@ -1,0 +1,107 @@
+@import 'tailwindcss';
+
+/* ─────────────────────────── Design tokens ───────────────────────────
+   "Floodlit" — night-match cricket. Deep charcoal-green turf under stadium
+   lights; electric grass-lime as the live/interactive accent; floodlight amber
+   for active reservations; ball-red clay for booked slots. */
+@theme {
+  --color-turf-950: #070a07;
+  --color-turf-900: #0b0f0b;
+  --color-turf-850: #10160f;
+  --color-turf-800: #161d14;
+  --color-turf-700: #1f2a1c;
+  --color-turf-600: #2c3a27;
+
+  --color-chalk: #f3f1e7;
+  --color-chalk-dim: #b9bdae;
+  --color-haze: #7e8a76;
+
+  --color-lime: #b9f73e;
+  --color-lime-deep: #93cc28;
+  --color-amber: #ffb02e;
+  --color-clay: #e5604a;
+
+  --font-display: 'Bricolage Grotesque', ui-sans-serif, sans-serif;
+  --font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--color-turf-950);
+    color: var(--color-chalk);
+    /* Floodlit atmosphere: two cool-warm light pools + a vignette + fine grain. */
+    background-image:
+      radial-gradient(60rem 40rem at 78% -10%, rgba(185, 247, 62, 0.1), transparent 60%),
+      radial-gradient(50rem 38rem at 12% 8%, rgba(255, 176, 46, 0.06), transparent 55%),
+      radial-gradient(90rem 60rem at 50% 120%, rgba(147, 204, 40, 0.05), transparent 60%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Subtle film grain overlay for texture. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-turf-950);
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-lime);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .crease-line {
+    background-image: repeating-linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--color-chalk) 14%, transparent) 0 1px,
+      transparent 1px 14px
+    );
+  }
+  @keyframes pulse-amber {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 176, 46, 0.45);
+    }
+    50% {
+      box-shadow: 0 0 0 6px rgba(255, 176, 46, 0);
+    }
+  }
+  .animate-pulse-amber {
+    animation: pulse-amber 1.6s ease-out infinite;
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-rise {
+    animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}

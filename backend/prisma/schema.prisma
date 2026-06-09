@@ -1,0 +1,57 @@
+// Prisma schema — MySQL. See docs/ARCHITECTURE.md §5 for the database-choice rationale.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  bookings     Booking[]
+
+  @@map("users")
+}
+
+model Pitch {
+  id           String    @id @default(uuid())
+  name         String
+  location     String
+  pricePerHour Decimal   @map("price_per_hour") @db.Decimal(10, 2)
+  openHour     Int       @default(6) @map("open_hour") @db.SmallInt
+  closeHour    Int       @default(23) @map("close_hour") @db.SmallInt
+  bookings     Booking[]
+
+  @@map("pitches")
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  pitchId     String   @map("pitch_id")
+  bookingDate DateTime @map("booking_date") @db.Date
+  startTime   String   @map("start_time") @db.VarChar(8)
+  endTime     String   @map("end_time") @db.VarChar(8)
+  status      String   @default("confirmed") @db.VarChar(16)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  pitch Pitch @relation(fields: [pitchId], references: [id])
+
+  // THE booking invariant: at most one CONFIRMED booking per (pitch, date, start_time).
+  // MySQL 8 has no partial indexes, so we include `status` in the unique key — this
+  // permits exactly one 'confirmed' row per slot (and one 'cancelled'), which enforces
+  // the no-double-booking guarantee. The application never writes multiple cancelled
+  // rows for a slot, so this is equivalent to a partial unique index in practice.
+  @@unique([pitchId, bookingDate, startTime, status], name: "uniq_confirmed_slot")
+  @@index([pitchId, bookingDate])
+  @@index([userId, createdAt])
+  @@map("bookings")
+}

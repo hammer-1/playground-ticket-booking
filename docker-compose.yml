@@ -1,0 +1,84 @@
+services:
+  # ── Default services (run on a bare `docker compose up`) ─────────────────────
+  # Only the database + the migration step start by default. backend, frontend and
+  # redis are gated behind the `app` profile (see below), so `docker compose build`
+  # builds nothing and `docker compose up` just brings up MySQL and applies migrations.
+  mysql:
+    image: mysql:8.4
+    container_name: pitch_mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot migration runner. Uses the public node image (no build) and bind-mounts
+  # ./backend, running Prisma's CLI from the already-installed node_modules. Waits for
+  # MySQL to be healthy, applies migrations, then exits.
+  migrate:
+    image: node:22
+    container_name: pitch_migrate
+    working_dir: /app
+    env_file: .env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: sh -c "node_modules/.bin/prisma migrate deploy"
+    restart: "no"
+
+  # ── App services (only with `--profile app`) ─────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: pitch_redis
+    profiles: ["app"]
+    # Enable keyspace expiry notifications so the backend reacts to reservation TTLs.
+    command: ["redis-server", "--notify-keyspace-events", "Ex"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: pitch_backend
+    profiles: ["app"]
+    env_file: .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    # On boot: apply Prisma migrations, seed pitches, then start the server.
+    command: sh -c "npx prisma migrate deploy && node dist/infrastructure/persistence/seed.js && node dist/main.js"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL}
+    container_name: pitch_frontend
+    profiles: ["app"]
+    depends_on:
+      - backend
+    ports:
+      - "5200:80"
+
+volumes:
+  mysqldata:
